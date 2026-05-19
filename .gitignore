@@ -1,0 +1,15 @@
+# Maven build output
+target/
+
+# TXT data files (generated at runtime)
+data/
+
+# VS Code settings
+.vscode/
+
+# Mac system files
+.DS_Store
+
+# Java compiled files
+*.class
+*.jar
