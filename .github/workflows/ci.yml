@@ -1,0 +1,43 @@
+name: Build and Test
+
+# Trigger: automatically run on every push or pull request to any branch
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  build-and-test:
+    # Run on the latest Ubuntu runner
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Java 21 with Maven
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # Step 3: Create the data directory for TXT file storage
+      # (Integration tests write to data/ which may not exist in the repo)
+      - name: Create data directory
+        run: mkdir -p data
+
+      # Step 4: Build the project and run all tests (unit + integration)
+      - name: Build and run tests with Maven
+        run: mvn clean test
+
+      # Step 5: Upload test reports as an artifact for review
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: target/surefire-reports/
