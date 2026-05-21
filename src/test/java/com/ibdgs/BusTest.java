@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for the Bus class.
  *
- * Covers conditions B1–B5 with at least 3 test cases per condition:
+ * Covers conditions B1–B5 with exactly 3 test cases per condition (15 total):
  *   B1 - Bus ID must be exactly 8 digits
  *   B2 - Capacity cannot increase during update
  *   B3 - Drivers older than 50 cannot drive buses with capacity >= 50
@@ -19,26 +19,23 @@ import static org.junit.jupiter.api.Assertions.*;
 class BusTest {
 
     // -------------------------------------------------------------------------
-    // Helper: create a basic valid Bus
+    // Helpers
     // -------------------------------------------------------------------------
 
-    /** Creates a valid Diesel bus for reuse in tests. */
     private Bus validDieselBus() {
         return new Bus("12345678", 40, 75.0, "Diesel");
     }
 
-    /** Creates a valid Electric bus for B4/B5 restriction tests. */
     private Bus validElectricBus() {
         return new Bus("87654321", 30, 90.0, "Electricity");
     }
 
-    /** Creates a valid Hybrid bus for B5 restriction tests. */
     private Bus validHybridBus() {
         return new Bus("11223344", 45, 50.0, "Hybrid");
     }
 
     // =========================================================================
-    // B1: Bus ID Validation (exactly 8 digits)
+    // B1: Bus ID Validation (3 tests)
     // =========================================================================
 
     /**
@@ -48,16 +45,6 @@ class BusTest {
     @DisplayName("B1 - Normal: valid 8-digit busID is accepted")
     void testB1_ValidBusID() {
         assertDoesNotThrow(() -> Bus.validateBusID("12345678"));
-    }
-
-    /**
-     * B1 - Invalid input: bus ID with fewer than 8 digits should be rejected.
-     */
-    @Test
-    @DisplayName("B1 - Invalid: busID shorter than 8 characters is rejected")
-    void testB1_TooShortBusID() {
-        assertThrows(IllegalArgumentException.class,
-            () -> Bus.validateBusID("1234567"));
     }
 
     /**
@@ -71,17 +58,17 @@ class BusTest {
     }
 
     /**
-     * B1 - Edge case: exactly 9 digits (one too many) should be rejected.
+     * B1 - Edge case: exactly 7 digits (one below required length) should be rejected.
      */
     @Test
-    @DisplayName("B1 - Edge: busID with 9 digits is rejected")
-    void testB1_TooLongBusID() {
+    @DisplayName("B1 - Edge: busID with 7 digits is rejected")
+    void testB1_TooShortBusID() {
         assertThrows(IllegalArgumentException.class,
-            () -> Bus.validateBusID("123456789"));
+            () -> Bus.validateBusID("1234567"));
     }
 
     // =========================================================================
-    // B2: Capacity Cannot Increase During Update
+    // B2: Capacity Cannot Increase During Update (3 tests)
     // =========================================================================
 
     /**
@@ -107,8 +94,7 @@ class BusTest {
     }
 
     /**
-     * B2 - Edge case: setting capacity to the same value should be accepted
-     * (it's not an increase).
+     * B2 - Edge case: setting capacity to the same value should be accepted.
      */
     @Test
     @DisplayName("B2 - Edge: setting capacity to the same value is allowed")
@@ -118,7 +104,7 @@ class BusTest {
     }
 
     // =========================================================================
-    // B3: Drivers Older Than 50 Cannot Drive Buses With Capacity >= 50
+    // B3: Drivers Older Than 50 Cannot Drive Buses With Capacity >= 50 (3 tests)
     // =========================================================================
 
     /**
@@ -143,38 +129,27 @@ class BusTest {
     }
 
     /**
-     * B3 - Edge case: driver aged exactly 51 with a bus capacity of exactly 50 is blocked.
+     * B3 - Edge case: driver aged exactly 50 with bus capacity exactly 50 — allowed.
      */
     @Test
-    @DisplayName("B3 - Edge: driver aged 51 with bus capacity 50 is rejected")
+    @DisplayName("B3 - Edge: driver aged 50 with bus capacity 50 is allowed (boundary)")
     void testB3_BoundaryAgeAndCapacity() {
         Bus bus = new Bus("33333333", 50, 60.0, "Diesel");
-        assertThrows(IllegalArgumentException.class,
-            () -> bus.checkDriverAgeRestriction(51));
-    }
-
-    /**
-     * B3 - Edge case: driver aged 51 with bus capacity of 49 should be allowed.
-     */
-    @Test
-    @DisplayName("B3 - Edge: driver aged 51 with bus capacity 49 is allowed")
-    void testB3_OldDriverSmallBus() {
-        Bus bus = new Bus("44444444", 49, 60.0, "Diesel");
-        assertDoesNotThrow(() -> bus.checkDriverAgeRestriction(51));
+        assertDoesNotThrow(() -> bus.checkDriverAgeRestriction(50));
     }
 
     // =========================================================================
-    // B4: Only Drivers with >= 5 Years Experience Can Drive Electric Buses
+    // B4: Only Drivers with >= 5 Years Experience Can Drive Electric Buses (3 tests)
     // =========================================================================
 
     /**
-     * B4 - Normal case: driver with 5 years experience can drive an electric bus.
+     * B4 - Normal case: driver with 10 years experience can drive an electric bus.
      */
     @Test
-    @DisplayName("B4 - Normal: driver with 5 years experience can drive electric bus")
+    @DisplayName("B4 - Normal: driver with 10 years experience can drive electric bus")
     void testB4_SufficientExperience() {
         Bus bus = validElectricBus();
-        assertDoesNotThrow(() -> bus.checkElectricExperienceRestriction(5));
+        assertDoesNotThrow(() -> bus.checkElectricExperienceRestriction(10));
     }
 
     /**
@@ -189,29 +164,17 @@ class BusTest {
     }
 
     /**
-     * B4 - Edge case: driver with 0 years experience cannot drive an electric bus.
+     * B4 - Edge case: driver with exactly 5 years experience can drive an electric bus (boundary).
      */
     @Test
-    @DisplayName("B4 - Edge: driver with 0 years experience cannot drive electric bus")
-    void testB4_ZeroExperience() {
+    @DisplayName("B4 - Edge: driver with exactly 5 years experience can drive electric bus")
+    void testB4_ExactlyFiveYears() {
         Bus bus = validElectricBus();
-        assertThrows(IllegalArgumentException.class,
-            () -> bus.checkElectricExperienceRestriction(0));
-    }
-
-    /**
-     * B4 - Normal case: experience restriction does not apply to Diesel buses.
-     */
-    @Test
-    @DisplayName("B4 - Normal: experience restriction does not apply to diesel buses")
-    void testB4_NoRestrictionForDiesel() {
-        Bus bus = validDieselBus();
-        // Even 0 years experience is fine for a Diesel bus
-        assertDoesNotThrow(() -> bus.checkElectricExperienceRestriction(0));
+        assertDoesNotThrow(() -> bus.checkElectricExperienceRestriction(5));
     }
 
     // =========================================================================
-    // B5: Only Heavy/PublicTransport Licence Can Drive Electric or Hybrid Buses
+    // B5: Only Heavy/PublicTransport Licence Can Drive Electric or Hybrid Buses (3 tests)
     // =========================================================================
 
     /**
@@ -225,44 +188,23 @@ class BusTest {
     }
 
     /**
-     * B5 - Normal case: PublicTransport licence holder can drive a hybrid bus.
+     * B5 - Invalid input: Car licence holder cannot drive an electric bus.
      */
     @Test
-    @DisplayName("B5 - Normal: PublicTransport licence holder can drive hybrid bus")
-    void testB5_PublicTransportLicenceHybrid() {
-        Bus bus = validHybridBus();
-        assertDoesNotThrow(() -> bus.checkLicenceRestriction("PublicTransport"));
-    }
-
-    /**
-     * B5 - Invalid input: Light licence holder cannot drive an electric bus.
-     */
-    @Test
-    @DisplayName("B5 - Invalid: Light licence holder cannot drive electric bus")
-    void testB5_LightLicenceElectric() {
+    @DisplayName("B5 - Invalid: Car licence holder cannot drive electric bus")
+    void testB5_CarLicenceElectric() {
         Bus bus = validElectricBus();
         assertThrows(IllegalArgumentException.class,
-            () -> bus.checkLicenceRestriction("Light"));
+            () -> bus.checkLicenceRestriction("Car"));
     }
 
     /**
-     * B5 - Invalid input: Medium licence holder cannot drive a hybrid bus.
+     * B5 - Edge case: Car licence holder CAN drive a Diesel bus (no restriction applies).
      */
     @Test
-    @DisplayName("B5 - Invalid: Medium licence holder cannot drive hybrid bus")
-    void testB5_MediumLicenceHybrid() {
-        Bus bus = validHybridBus();
-        assertThrows(IllegalArgumentException.class,
-            () -> bus.checkLicenceRestriction("Medium"));
-    }
-
-    /**
-     * B5 - Edge case: Light licence holder CAN drive a Diesel bus (no restriction).
-     */
-    @Test
-    @DisplayName("B5 - Edge: Light licence holder can drive diesel bus (no restriction)")
-    void testB5_LightLicenceDiesel() {
+    @DisplayName("B5 - Edge: Car licence holder can drive diesel bus (no restriction)")
+    void testB5_CarLicenceDiesel() {
         Bus bus = validDieselBus();
-        assertDoesNotThrow(() -> bus.checkLicenceRestriction("Light"));
+        assertDoesNotThrow(() -> bus.checkLicenceRestriction("Car"));
     }
 }

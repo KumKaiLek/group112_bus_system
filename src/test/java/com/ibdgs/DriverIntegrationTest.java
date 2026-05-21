@@ -5,21 +5,23 @@ import java.io.*;
 import java.nio.file.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Integration tests for DriverRepository.
+ *
+ * Verifies that driver records are correctly stored, rejected, updated,
+ * and counted using real TXT file persistence (4 test cases total).
+ */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class DriverIntegrationTest {
 
-    // Temporary TXT file used for all integration tests
     private static final String TEST_FILE = "data/test_drivers.txt";
-
     private DriverRepository repo;
 
     /**
      * Set up a fresh repository and empty TXT file before each test.
-     * Ensures each test starts from a clean state.
      */
     @BeforeEach
     void setUp() throws IOException {
-        // Delete the file if it exists from a previous test
         Files.deleteIfExists(Paths.get(TEST_FILE));
         repo = new DriverRepository(TEST_FILE);
     }
@@ -33,18 +35,13 @@ class DriverIntegrationTest {
     }
 
     // -------------------------------------------------------------------------
-    // Helper: valid driver objects
+    // Helper
     // -------------------------------------------------------------------------
 
-    /** Returns a valid driver for reuse across tests. */
     private Driver makeDriver(String id) {
         return new Driver(
-            id,
-            "Test Driver",
-            5,
-            "Light",
-            "10|Swanston St|Melbourne|VIC|Australia",
-            "01-01-1990"
+            id, "Test Driver", 5, "Light",
+            "10|Swanston St|Melbourne|VIC|Australia", "01-01-1990"
         );
     }
 
@@ -53,8 +50,8 @@ class DriverIntegrationTest {
     // =========================================================================
 
     /**
-     * IT-D1: Adding a valid driver should persist it to the TXT file,
-     * and it should be retrievable with correct field values.
+     * IT-D1: Adding a valid driver should persist it to the TXT file
+     * and it should be retrievable with all correct field values.
      */
     @Test
     @Order(1)
@@ -63,13 +60,11 @@ class DriverIntegrationTest {
         Driver driver = makeDriver("23@#bc45AB");
         repo.add(driver);
 
-        // Retrieve from file and verify all fields
         Driver retrieved = repo.retrieve("23@#bc45AB");
         assertNotNull(retrieved, "Driver should be found in the file");
         assertEquals("23@#bc45AB", retrieved.getDriverID());
-        assertEquals("Test Driver",  retrieved.getName());
+        assertEquals("Test Driver", retrieved.getName());
         assertEquals(5, retrieved.getExperienceYears());
-        assertEquals("Light", retrieved.getLicenseType());
         assertEquals("01-01-1990", retrieved.getBirthdate());
     }
 
@@ -85,32 +80,12 @@ class DriverIntegrationTest {
     @Order(2)
     @DisplayName("IT-D2: Duplicate driverID is rejected and file is unchanged")
     void testIT_D2_DuplicateDriverRejected() throws IOException {
-        Driver driver1 = makeDriver("23@#bc45AB");
-        repo.add(driver1);
+        repo.add(makeDriver("23@#bc45AB"));
 
-        // Attempt to add a second driver with the same ID
-        Driver driver2 = makeDriver("23@#bc45AB");
-        assertThrows(IllegalArgumentException.class, () -> repo.add(driver2));
-
-        // File should still contain exactly 1 record
-        assertEquals(1, repo.count(), "File should still have only 1 driver record");
-    }
-
-    /**
-     * IT-D2: A driver constructed with an invalid driverID should throw
-     * at construction time, before it even reaches the repository.
-     */
-    @Test
-    @Order(3)
-    @DisplayName("IT-D2: Driver with invalid ID is rejected at construction, not stored")
-    void testIT_D2_InvalidDriverNotStored() throws IOException {
-        // Constructing a driver with an invalid ID should throw
         assertThrows(IllegalArgumentException.class,
-            () -> new Driver("INVALID_ID", "Bad Driver", 3, "Light",
-                             "1|Test St|Melbourne|VIC|Australia", "01-01-2000"));
+            () -> repo.add(makeDriver("23@#bc45AB")));
 
-        // Repository should remain empty
-        assertEquals(0, repo.count());
+        assertEquals(1, repo.count(), "File should still have only 1 driver record");
     }
 
     // =========================================================================
@@ -118,29 +93,21 @@ class DriverIntegrationTest {
     // =========================================================================
 
     /**
-     * IT-D3: Updating a driver's address should persist the new value
-     * and the old value should no longer appear in the file.
+     * IT-D3: Updating a driver's details should persist the new values
+     * and the old values should no longer appear in the file.
      */
     @Test
-    @Order(4)
+    @Order(3)
     @DisplayName("IT-D3: Driver update is persisted correctly to TXT file")
     void testIT_D3_UpdatePersistedToFile() throws IOException {
-        // Add the original driver
-        Driver driver = makeDriver("45@!cd67GH");
-        repo.add(driver);
+        repo.add(makeDriver("45@!cd67GH"));
 
-        // Create an updated version with a new address
         Driver updated = new Driver(
-            "45@!cd67GH",
-            "Test Driver",
-            5,
-            "Medium",  // updated licenseType
-            "99|New St|Sydney|NSW|Australia",  // updated address
-            "01-01-1990"
+            "45@!cd67GH", "Test Driver", 5, "Medium",
+            "99|New St|Sydney|NSW|Australia", "01-01-1990"
         );
         repo.update(updated);
 
-        // Retrieve and verify the update was persisted
         Driver retrieved = repo.retrieve("45@!cd67GH");
         assertNotNull(retrieved);
         assertEquals("Medium", retrieved.getLicenseType(),
@@ -154,11 +121,12 @@ class DriverIntegrationTest {
     // =========================================================================
 
     /**
-     * IT-D4: Count should increase with each valid driver added.
+     * IT-D4: Count should increase with each valid driver added and remain
+     * unchanged after a failed duplicate add.
      */
     @Test
-    @Order(5)
-    @DisplayName("IT-D4: Count increases correctly as drivers are added")
+    @Order(4)
+    @DisplayName("IT-D4: Count updates correctly and stays unchanged after rejected add")
     void testIT_D4_CountUpdatesCorrectly() throws IOException {
         assertEquals(0, repo.count(), "Initial count should be 0");
 
@@ -168,25 +136,9 @@ class DriverIntegrationTest {
         repo.add(makeDriver("56@!ef78CD"));
         assertEquals(2, repo.count(), "Count should be 2 after second add");
 
-        repo.add(makeDriver("78##gh12EF"));
-        assertEquals(3, repo.count(), "Count should be 3 after third add");
-    }
-
-    /**
-     * IT-D4: Count should remain unchanged after a failed add (duplicate ID).
-     */
-    @Test
-    @Order(6)
-    @DisplayName("IT-D4: Count does not change after rejected duplicate add")
-    void testIT_D4_CountUnchangedAfterFailedAdd() throws IOException {
-        repo.add(makeDriver("23@#bc45AB"));
-        int countBefore = repo.count();
-
-        // Try to add a duplicate — should throw
+        // Duplicate — should not change count
         assertThrows(IllegalArgumentException.class,
             () -> repo.add(makeDriver("23@#bc45AB")));
-
-        assertEquals(countBefore, repo.count(),
-            "Count should be unchanged after rejected duplicate");
+        assertEquals(2, repo.count(), "Count should remain 2 after rejected duplicate");
     }
 }

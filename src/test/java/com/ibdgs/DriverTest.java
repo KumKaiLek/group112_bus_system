@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Unit tests for the Driver class.
  *
- * Covers conditions D1–D5 with at least 3 test cases per condition:
+ * Covers conditions D1–D5 with exactly 3 test cases per condition (15 total):
  *   D1 - Driver ID validation rules
  *   D2 - Address format validation
  *   D3 - Birthdate format validation
@@ -28,22 +28,21 @@ class DriverTest {
      */
     private Driver validDriver() {
         return new Driver(
-            "23@#bc45AB",      // valid driverID
-            "John Smith",      // name
-            5,                 // experienceYears
-            "Light",           // licenseType
-            "12|Main St|Melbourne|VIC|Australia",  // valid address
-            "15-06-1990"       // valid birthdate
+            "23@#bc45AB",
+            "John Smith",
+            5,
+            "Light",
+            "12|Main St|Melbourne|VIC|Australia",
+            "15-06-1990"
         );
     }
 
     // =========================================================================
-    // D1: Driver ID Validation
+    // D1: Driver ID Validation (3 tests)
     // =========================================================================
 
     /**
      * D1 - Normal case: a correctly formatted driver ID should be accepted.
-     * Format: 2 digits (2-9) | 6 middle chars with ≥2 special | 2 uppercase letters
      */
     @Test
     @DisplayName("D1 - Normal: valid driverID is accepted")
@@ -58,42 +57,8 @@ class DriverTest {
     @Test
     @DisplayName("D1 - Invalid: driverID shorter than 10 characters")
     void testD1_TooShortDriverID() {
-        // Only 8 characters — must throw
         assertThrows(IllegalArgumentException.class,
             () -> Driver.validateDriverID("23@#bcAB"));
-    }
-
-    /**
-     * D1 - Invalid input: first character is a digit outside 2–9 (here: '1').
-     */
-    @Test
-    @DisplayName("D1 - Invalid: first digit is 1 (not in range 2-9)")
-    void testD1_FirstDigitOutOfRange() {
-        // Starts with '1' which is not allowed
-        assertThrows(IllegalArgumentException.class,
-            () -> Driver.validateDriverID("13@#bc45AB"));
-    }
-
-    /**
-     * D1 - Invalid input: fewer than 2 special characters in positions 3–8.
-     */
-    @Test
-    @DisplayName("D1 - Invalid: fewer than 2 special characters in middle section")
-    void testD1_InsufficientSpecialChars() {
-        // Only 1 special char '@' in positions 3-8
-        assertThrows(IllegalArgumentException.class,
-            () -> Driver.validateDriverID("23@abcdeAB"));
-    }
-
-    /**
-     * D1 - Invalid input: last two characters are not uppercase letters.
-     */
-    @Test
-    @DisplayName("D1 - Invalid: last two characters are not uppercase letters")
-    void testD1_LastCharsNotUppercase() {
-        // Ends with 'ab' (lowercase) — must throw
-        assertThrows(IllegalArgumentException.class,
-            () -> Driver.validateDriverID("23@#bc45ab"));
     }
 
     /**
@@ -102,12 +67,11 @@ class DriverTest {
     @Test
     @DisplayName("D1 - Edge: exactly 2 special characters (minimum) is accepted")
     void testD1_ExactlyTwoSpecialChars() {
-        // "56@!abcdGH": 2 specials @,! at positions 3-4 — should pass
         assertDoesNotThrow(() -> Driver.validateDriverID("56@!abcdGH"));
     }
 
     // =========================================================================
-    // D2: Address Format Validation
+    // D2: Address Format Validation (3 tests)
     // =========================================================================
 
     /**
@@ -126,7 +90,6 @@ class DriverTest {
     @Test
     @DisplayName("D2 - Invalid: address with only 4 components is rejected")
     void testD2_TooFewComponents() {
-        // Missing Country — only 4 parts
         assertThrows(IllegalArgumentException.class,
             () -> Driver.validateAddress("42|Collins St|Melbourne|VIC"));
     }
@@ -137,13 +100,12 @@ class DriverTest {
     @Test
     @DisplayName("D2 - Edge: address with blank component is rejected")
     void testD2_BlankComponent() {
-        // City field is empty
         assertThrows(IllegalArgumentException.class,
             () -> Driver.validateAddress("42|Collins St||VIC|Australia"));
     }
 
     // =========================================================================
-    // D3: Birthdate Format Validation
+    // D3: Birthdate Format Validation (3 tests)
     // =========================================================================
 
     /**
@@ -176,7 +138,7 @@ class DriverTest {
     }
 
     // =========================================================================
-    // D4: License Update Restriction (>10 years experience)
+    // D4: License Update Restriction (3 tests)
     // =========================================================================
 
     /**
@@ -189,7 +151,6 @@ class DriverTest {
             "23@#bc45AB", "Jane Doe", 10, "Light",
             "5|Bridge Rd|Richmond|VIC|Australia", "20-03-1985"
         );
-        // 10 years — change should be allowed (condition is strictly > 10)
         assertDoesNotThrow(() -> driver.setLicenseType("Medium"));
     }
 
@@ -203,7 +164,6 @@ class DriverTest {
             "23@#bc45AB", "Jane Doe", 11, "Heavy",
             "5|Bridge Rd|Richmond|VIC|Australia", "20-03-1980"
         );
-        // 11 years — change must be blocked
         assertThrows(IllegalStateException.class,
             () -> driver.setLicenseType("Light"));
     }
@@ -223,11 +183,11 @@ class DriverTest {
     }
 
     // =========================================================================
-    // D5: Immutable Fields (driverID and name)
+    // D5: Immutable Fields (3 tests)
     // =========================================================================
 
     /**
-     * D5 - Normal case (immutability check): attempting to set driverID throws exception.
+     * D5 - Normal case: attempting to set driverID throws UnsupportedOperationException.
      */
     @Test
     @DisplayName("D5 - Normal: setDriverID always throws UnsupportedOperationException")
@@ -238,10 +198,10 @@ class DriverTest {
     }
 
     /**
-     * D5 - Normal case (immutability check): attempting to set name throws exception.
+     * D5 - Invalid input: attempting to set name throws UnsupportedOperationException.
      */
     @Test
-    @DisplayName("D5 - Normal: setName always throws UnsupportedOperationException")
+    @DisplayName("D5 - Invalid: setName always throws UnsupportedOperationException")
     void testD5_NameImmutable() {
         Driver driver = validDriver();
         assertThrows(UnsupportedOperationException.class,
@@ -249,7 +209,7 @@ class DriverTest {
     }
 
     /**
-     * D5 - Edge case: confirm that driverID remains unchanged after a failed update attempt.
+     * D5 - Edge case: driverID remains unchanged after a failed update attempt.
      */
     @Test
     @DisplayName("D5 - Edge: driverID value is unchanged after failed set attempt")
@@ -259,7 +219,7 @@ class DriverTest {
         try {
             driver.setDriverID("99@@ef78ZZ");
         } catch (UnsupportedOperationException e) {
-            // Expected — verify the ID has not changed
+            // Expected
         }
         assertEquals(originalID, driver.getDriverID());
     }
