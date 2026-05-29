@@ -186,7 +186,7 @@ public class RouteTest {
     @Test
     @DisplayName("R5 - Invalid: assigning a bus to an inactive route is rejected")
     void testR5_AssignBusToInactiveRoute() {
-        Route route = new Route("RT0004", 40.0, 2, "Local", false);
+        Route route = new Route("RT0004", 40.0, 2, "Normal", false);
         assertThrows(IllegalStateException.class,
             () -> route.assignBus("12345678"));
     }
