@@ -149,7 +149,7 @@ public class BusRepository {
      * Overwrites the storage file with the given list of lines.
      *
      * @param lines the lines to write
-     * @throws IOException if the file cannot be written
+     * @throws IOException if the file cannot be written to
      */
     private void writeAllLines(List<String> lines) throws IOException {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath, false))) {
