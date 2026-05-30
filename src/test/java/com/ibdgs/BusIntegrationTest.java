@@ -26,13 +26,6 @@ class BusIntegrationTest {
         repo = new BusRepository(TEST_FILE);
     }
 
-    /**
-     * Clean up the TXT file after each test.
-     */
-    @AfterEach
-    void tearDown() throws IOException {
-        Files.deleteIfExists(Paths.get(TEST_FILE));
-    }
 
     // -------------------------------------------------------------------------
     // Helper
